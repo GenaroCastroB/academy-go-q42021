@@ -17,7 +17,7 @@ func FindAllPokemons() ([]models.Pokemon, error) {
 	return pokemons, nil
 }
 
-func FindAllPokemonsById(id string) (*models.Pokemon, error) {
+func FindPokemonById(id string) (*models.Pokemon, error) {
 	pokemons, error := FindAllPokemons()
 	if error != nil {
 		return nil, error

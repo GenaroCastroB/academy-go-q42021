@@ -18,7 +18,7 @@ func FindPokemons(c *gin.Context) {
 
 func FindPokemonById(c *gin.Context) {
 	id := c.Param("id")
-	pokemon, error := services.FindAllPokemonsById(id)
+	pokemon, error := services.FindPokemonById(id)
 	if error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": error})
 		return
