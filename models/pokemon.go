@@ -1,6 +1,6 @@
 package models
 
 type Pokemon struct {
-	Id   int    `json:"id" gorm primary_key`
+	Id   int    `json:"id"`
 	Name string `json:"name"`
 }
