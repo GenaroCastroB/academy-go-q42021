@@ -4,6 +4,8 @@ import (
 	"golangBootcamp/m/services"
 	"net/http"
 
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,7 +19,11 @@ func FindPokemons(c *gin.Context) {
 }
 
 func FindPokemonById(c *gin.Context) {
-	id := c.Param("id")
+	id, error := strconv.Atoi(c.Param("id"))
+	if error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": error})
+		return
+	}
 	pokemon, error := services.FindPokemonById(id)
 	if error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": error})

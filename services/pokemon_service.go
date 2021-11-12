@@ -3,6 +3,7 @@ package services
 import (
 	"golangBootcamp/m/common"
 	"golangBootcamp/m/models"
+	"strconv"
 )
 
 func FindAllPokemons() ([]models.Pokemon, error) {
@@ -12,12 +13,16 @@ func FindAllPokemons() ([]models.Pokemon, error) {
 	}
 	pokemons := []models.Pokemon{}
 	for _, csvPokemon := range csvPokemons {
-		pokemons = append(pokemons, models.Pokemon{Id: csvPokemon[0], Name: csvPokemon[1]})
+		intId, error := strconv.Atoi(csvPokemon[0])
+		if error != nil {
+			return nil, error
+		}
+		pokemons = append(pokemons, models.Pokemon{Id: intId, Name: csvPokemon[1]})
 	}
 	return pokemons, nil
 }
 
-func FindPokemonById(id string) (*models.Pokemon, error) {
+func FindPokemonById(id int) (*models.Pokemon, error) {
 	pokemons, error := FindAllPokemons()
 	if error != nil {
 		return nil, error
