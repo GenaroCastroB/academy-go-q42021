@@ -1,50 +1,30 @@
-package common
+package repositories
 
 import (
 	"encoding/csv"
 	"fmt"
 	"golangBootcamp/m/models"
-	"io"
 	"os"
 	"strconv"
 
 	"github.com/spf13/viper"
 )
 
-type PokemonRepo struct{}
-
-func NewPokemonRepo() PokemonRepo {
-	return PokemonRepo{}
+type PokemonCSV interface {
+	ReadCsvFile(filePath string) ([][]string, error)
 }
 
-func ReadCsvFile(filePath string) ([][]string, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		fmt.Println("Unable to read input file "+filePath, err)
-		return nil, err
-	}
-	defer file.Close()
-
-	records, err := readFile(file)
-	if err != nil {
-		fmt.Println("Unable to parse file as CSV for "+filePath, err)
-		return nil, err
-	}
-
-	return records, nil
+type PokemonRepo struct {
+	pokemonCSV PokemonCSV
 }
 
-func readFile(reader io.Reader) ([][]string, error) {
-	r := csv.NewReader(reader)
-	records, err := r.ReadAll()
-	if err != nil {
-		return nil, err
-	}
-	return records, err
+func NewPokemonRepo(pokemonCsv PokemonCSV) PokemonRepo {
+	return PokemonRepo{pokemonCsv}
 }
 
 func (pr PokemonRepo) GetPokemonsFromCSV() ([]models.Pokemon, error) {
-	csvPokemons, error := ReadCsvFile(viper.GetString("data.pokemon.file"))
+	fmt.Println("FilePath", viper.GetString("data.pokemon.file"))
+	csvPokemons, error := pr.pokemonCSV.ReadCsvFile(viper.GetString("data.pokemon.file"))
 	if error != nil {
 		return nil, error
 	}

@@ -1,0 +1,7 @@
+api:
+  pokemon:
+    url: "https://pokeapi.co/api/v2/pokemon"
+
+data:
+  pokemon:
+    file: "pokemon.csv"
