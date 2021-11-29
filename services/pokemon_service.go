@@ -44,8 +44,6 @@ func (pks PokemonService) FindPokemonById(id int) (*models.Pokemon, error) {
 }
 
 func (pks PokemonService) LoadPokemons() (bool, error) {
-	//TODO: inyect this request
-	//and viper configs
 	response, error := http.Get(viper.GetString("api.pokemon.url"))
 	if error != nil {
 		fmt.Println("Error getting data from api: ", error)

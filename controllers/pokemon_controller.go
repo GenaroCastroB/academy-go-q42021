@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//TODO: anylise if needs to move to interfaces folder
 type pokemonService interface {
 	FindAllPokemons() ([]models.Pokemon, error)
 	FindPokemonById(id int) (*models.Pokemon, error)

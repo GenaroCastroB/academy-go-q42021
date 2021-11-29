@@ -23,7 +23,6 @@ func NewPokemonRepo(pokemonCsv PokemonCSV) PokemonRepo {
 }
 
 func (pr PokemonRepo) GetPokemonsFromCSV() ([]models.Pokemon, error) {
-	fmt.Println("FilePath", viper.GetString("data.pokemon.file"))
 	csvPokemons, error := pr.pokemonCSV.ReadCsvFile(viper.GetString("data.pokemon.file"))
 	if error != nil {
 		return nil, error

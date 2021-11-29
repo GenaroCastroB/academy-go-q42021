@@ -3,6 +3,7 @@ package app
 import (
 	"golangBootcamp/m/common"
 	"golangBootcamp/m/controllers"
+	"golangBootcamp/m/repositories"
 	"golangBootcamp/m/services"
 	"log"
 	"net/http"
@@ -18,21 +19,21 @@ type App struct {
 
 func (a *App) Initialize() {
 	a.Router = gin.Default()
-	a.setRoutes()
 	setConfigs()
 	if err := setConfigs(); err != nil {
 		log.Fatalf("%s", err.Error())
 	}
-	pokemonService := services.NewPokemonService(common.NewPokemonRepo())
+	a.injectDependencies()
+	a.setRoutes()
+}
+
+func (a *App) injectDependencies() {
+	pokemonRepo := repositories.NewPokemonRepo(common.NewCsvReader())
+	pokemonService := services.NewPokemonService(pokemonRepo)
 	a.pokemonHandler = controllers.NewPokemonServiceHandler(pokemonService)
 }
 
-func test(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"data": "it is ok"})
-}
-
 func (a *App) setRoutes() {
-	a.Router.GET("/test", test)
 	a.Router.GET("/pokemons", a.pokemonHandler.FindPokemons)
 	a.Router.GET("/pokemons/:id", a.pokemonHandler.FindPokemonById)
 	a.Router.PUT("/load/pokemons", a.pokemonHandler.LoadPokemons)
