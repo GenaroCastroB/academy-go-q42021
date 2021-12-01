@@ -3,17 +3,23 @@ package repositories
 import (
 	"errors"
 	"golangBootcamp/m/models"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type MockedPokemonCsv struct {
 	expectedCSVData [][]string
 	expectedError   error
+	writeCsvError   error
 }
 
 func (mpr MockedPokemonCsv) ReadCsvFile(filePath string) ([][]string, error) {
 	return mpr.expectedCSVData, mpr.expectedError
+}
+
+func (mpr MockedPokemonCsv) WriteCsvFile(filePath string, data [][]string) error {
+	return mpr.writeCsvError
 }
 
 func TestGetPokemonsFromCSV(t *testing.T) {
@@ -22,7 +28,7 @@ func TestGetPokemonsFromCSV(t *testing.T) {
 		mpr          PokemonCSV
 		pokemonId    int
 		expectedData []models.Pokemon
-		expectingErr bool
+		expectedErr  error
 	}{
 		{
 			name: "Happy path",
@@ -38,7 +44,7 @@ func TestGetPokemonsFromCSV(t *testing.T) {
 				{Id: 1, Name: "pokemon1"},
 				{Id: 2, Name: "pokemon2"},
 			},
-			expectingErr: false,
+			expectedErr: nil,
 		},
 		{
 			name: "Error on read csv file",
@@ -48,21 +54,54 @@ func TestGetPokemonsFromCSV(t *testing.T) {
 			},
 			pokemonId:    1,
 			expectedData: nil,
-			expectingErr: true,
+			expectedErr:  errors.New("Error"),
 		},
 	}
 
 	for _, subtest := range subtests {
 		t.Run(subtest.name, func(t *testing.T) {
-			repo := NewPokemonRepo(subtest.mpr)
-			pokemons, error := repo.GetPokemonsFromCSV()
-			if !reflect.DeepEqual(pokemons, subtest.expectedData) {
-				t.Errorf("Expected (%v), got (%v)", subtest.expectedData, pokemons)
-			}
-			errExist := error != nil
-			if subtest.expectingErr != errExist {
-				t.Errorf("Expected (%v) error, got (%v) error", subtest.expectingErr, errExist)
-			}
+			repo := NewPokemonRepo(subtest.mpr, "")
+			pokemons, err := repo.GetPokemonsFromCSV()
+			assert.Equal(t, pokemons, subtest.expectedData, "they should be equal")
+			assert.Equal(t, err, subtest.expectedErr)
+		})
+	}
+}
+
+func TestWritePokemonCsvFile(t *testing.T) {
+	subtests := []struct {
+		name        string
+		mpr         PokemonCSV
+		pokemonList []models.Pokemon
+		expectedErr error
+	}{
+		{
+			name: "Happy path",
+			mpr: &MockedPokemonCsv{
+				writeCsvError: nil,
+			},
+			pokemonList: []models.Pokemon{
+				{Id: 1, Name: "name"},
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "Error writing csv file",
+			mpr: &MockedPokemonCsv{
+				writeCsvError: errors.New("Error"),
+			},
+			pokemonList: []models.Pokemon{
+				{Id: 1, Name: "name"},
+			},
+			expectedErr: errors.New("Error"),
+		},
+	}
+
+	for _, subtest := range subtests {
+		t.Run(subtest.name, func(t *testing.T) {
+			repo := NewPokemonRepo(subtest.mpr, "")
+			err := repo.WritePokemonCsvFile(subtest.pokemonList)
+			assert.Equal(t, err, subtest.expectedErr)
 		})
 	}
 }

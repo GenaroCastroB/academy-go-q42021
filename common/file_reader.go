@@ -38,3 +38,24 @@ func readFile(reader io.Reader) ([][]string, error) {
 	}
 	return records, err
 }
+
+func (csvR CsvReader) WriteCsvFile(filePath string, data [][]string) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		fmt.Println("Cannot create file", err)
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	for _, row := range data {
+		err := writer.Write(row)
+		if err != nil {
+			fmt.Println("Cannot write to file", err)
+			return err
+		}
+	}
+	return nil
+}

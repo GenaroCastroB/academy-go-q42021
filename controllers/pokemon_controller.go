@@ -13,7 +13,7 @@ import (
 type pokemonService interface {
 	FindAllPokemons() ([]models.Pokemon, error)
 	FindPokemonById(id int) (*models.Pokemon, error)
-	LoadPokemons() (bool, error)
+	LoadPokemons() error
 }
 
 type PokemonServiceHandler struct {
@@ -25,9 +25,9 @@ func NewPokemonServiceHandler(pokemonService pokemonService) PokemonServiceHandl
 }
 
 func (pks PokemonServiceHandler) FindPokemons(c *gin.Context) {
-	pokemons, error := pks.pokemonService.FindAllPokemons()
-	if error != nil {
-		fmt.Println("Error ", error)
+	pokemons, err := pks.pokemonService.FindAllPokemons()
+	if err != nil {
+		fmt.Println("Error ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Something went wrong!"})
 		return
 	}
@@ -35,15 +35,15 @@ func (pks PokemonServiceHandler) FindPokemons(c *gin.Context) {
 }
 
 func (pks PokemonServiceHandler) FindPokemonById(c *gin.Context) {
-	id, error := strconv.Atoi(c.Param("id"))
-	if error != nil {
-		fmt.Println("Error ", error)
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		fmt.Println("Error ", err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid id param"})
 		return
 	}
-	pokemon, error := pks.pokemonService.FindPokemonById(id)
-	if error != nil {
-		fmt.Println("Error ", error)
+	pokemon, err := pks.pokemonService.FindPokemonById(id)
+	if err != nil {
+		fmt.Println("Error ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Something went wrong!"})
 		return
 	}
@@ -55,9 +55,9 @@ func (pks PokemonServiceHandler) FindPokemonById(c *gin.Context) {
 }
 
 func (pks PokemonServiceHandler) LoadPokemons(c *gin.Context) {
-	_, error := pks.pokemonService.LoadPokemons()
-	if error != nil {
-		fmt.Println("Error ", error)
+	err := pks.pokemonService.LoadPokemons()
+	if err != nil {
+		fmt.Println("Error ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Something went wrong!"})
 		return
 	}

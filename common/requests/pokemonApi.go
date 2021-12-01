@@ -8,12 +8,15 @@ import (
 )
 
 func ParsePokemonsFromApi(pokemonResponse *http.Response) ([]models.Pokemon, error) {
-	responseData, error := ioutil.ReadAll(pokemonResponse.Body)
-	if error != nil {
-		return nil, error
+	responseData, err := ioutil.ReadAll(pokemonResponse.Body)
+	if err != nil {
+		return nil, err
 	}
 	var responseObject models.PokemonResponse
-	json.Unmarshal(responseData, &responseObject)
+	err = json.Unmarshal(responseData, &responseObject)
+	if err != nil {
+		return nil, err
+	}
 
 	return responseObject.Pokemons, nil
 }

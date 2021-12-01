@@ -3,8 +3,9 @@ package services
 import (
 	"errors"
 	"golangBootcamp/m/models"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type MockedPokemonRepo struct {
@@ -16,16 +17,27 @@ func (mpr MockedPokemonRepo) GetPokemonsFromCSV() ([]models.Pokemon, error) {
 	return mpr.expectedPokemons, mpr.expectedError
 }
 
-func (mpr MockedPokemonRepo) WritePokemonCsvFile(pokemons []models.Pokemon) (bool, error) {
-	return true, nil
+func (mpr MockedPokemonRepo) WritePokemonCsvFile(pokemons []models.Pokemon) error {
+	return nil
 }
+
+type MockedPokemonClient struct {
+	expectedPokemons []models.Pokemon
+	expectedError    error
+}
+
+func (mpc MockedPokemonClient) GetPokemons() ([]models.Pokemon, error) {
+	return mpc.expectedPokemons, mpc.expectedError
+}
+
 func TestFindPokemonById(t *testing.T) {
 	subtests := []struct {
 		name         string
 		mpr          pokemonRepo
+		mpc          pokemonClient
 		pokemonId    int
 		expectedData *models.Pokemon
-		expectingErr bool
+		expectedErr  error
 	}{
 		{
 			name: "Happy path",
@@ -36,9 +48,10 @@ func TestFindPokemonById(t *testing.T) {
 				},
 				expectedError: nil,
 			},
+			mpc:          nil,
 			pokemonId:    1,
 			expectedData: &models.Pokemon{Id: 1, Name: "name"},
-			expectingErr: false,
+			expectedErr:  nil,
 		},
 		{
 			name: "Pokemon not found",
@@ -49,9 +62,10 @@ func TestFindPokemonById(t *testing.T) {
 				},
 				expectedError: nil,
 			},
+			mpc:          nil,
 			pokemonId:    3,
 			expectedData: nil,
-			expectingErr: false,
+			expectedErr:  nil,
 		},
 		{
 			name: "Find pokemons error",
@@ -59,23 +73,58 @@ func TestFindPokemonById(t *testing.T) {
 				expectedPokemons: nil,
 				expectedError:    errors.New("Error"),
 			},
+			mpc:          nil,
 			pokemonId:    1,
 			expectedData: nil,
-			expectingErr: true,
+			expectedErr:  errors.New("Error"),
 		},
 	}
 
 	for _, subtest := range subtests {
 		t.Run(subtest.name, func(t *testing.T) {
-			service := NewPokemonService(subtest.mpr)
-			pokemon, error := service.FindPokemonById(subtest.pokemonId)
-			if !reflect.DeepEqual(pokemon, subtest.expectedData) {
-				t.Errorf("Expected (%v), got (%v)", subtest.expectedData, pokemon)
-			}
-			errExist := error != nil
-			if subtest.expectingErr != errExist {
-				t.Errorf("Expected (%v) error, got (%v) error", subtest.expectingErr, errExist)
-			}
+			service := NewPokemonService(subtest.mpr, subtest.mpc)
+			pokemon, err := service.FindPokemonById(subtest.pokemonId)
+			assert.Equal(t, pokemon, subtest.expectedData, "they should be equal")
+			assert.Equal(t, err, subtest.expectedErr)
+		})
+	}
+}
+
+func TestLoadPokemons(t *testing.T) {
+	subtests := []struct {
+		name         string
+		mpr          pokemonRepo
+		mpc          pokemonClient
+		pokemonId    int
+		expectedData *models.Pokemon
+		expectedErr  error
+	}{
+		{
+			name: "Happy path",
+			mpr:  &MockedPokemonRepo{},
+			mpc: &MockedPokemonClient{
+				expectedError: nil,
+			},
+			pokemonId:    1,
+			expectedData: &models.Pokemon{Id: 1, Name: "name"},
+			expectedErr:  nil,
+		},
+		{
+			name: "Error getting pokemons from api",
+			mpr:  &MockedPokemonRepo{},
+			mpc: &MockedPokemonClient{
+				expectedError: errors.New("Error"),
+			},
+			expectedData: nil,
+			expectedErr:  errors.New("Error"),
+		},
+	}
+
+	for _, subtest := range subtests {
+		t.Run(subtest.name, func(t *testing.T) {
+			service := NewPokemonService(subtest.mpr, subtest.mpc)
+			err := service.LoadPokemons()
+			assert.Equal(t, err, subtest.expectedErr)
 		})
 	}
 }

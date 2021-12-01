@@ -1,6 +1,7 @@
 package app
 
 import (
+	"golangBootcamp/m/clients"
 	"golangBootcamp/m/common"
 	"golangBootcamp/m/controllers"
 	"golangBootcamp/m/repositories"
@@ -28,8 +29,11 @@ func (a *App) Initialize() {
 }
 
 func (a *App) injectDependencies() {
-	pokemonRepo := repositories.NewPokemonRepo(common.NewCsvReader())
-	pokemonService := services.NewPokemonService(pokemonRepo)
+	dataFilePath := viper.GetString("data.pokemon.file")
+	pokemonApiUrl := viper.GetString("api.pokemon.url")
+	pokemonRepo := repositories.NewPokemonRepo(common.NewCsvReader(), dataFilePath)
+	pokemonClient := clients.NewPokemonClient(pokemonApiUrl, &http.Client{})
+	pokemonService := services.NewPokemonService(pokemonRepo, pokemonClient)
 	a.pokemonHandler = controllers.NewPokemonServiceHandler(pokemonService)
 }
 

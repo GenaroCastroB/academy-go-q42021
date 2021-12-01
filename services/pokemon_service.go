@@ -2,38 +2,39 @@ package services
 
 import (
 	"fmt"
-	"golangBootcamp/m/common/requests"
 	"golangBootcamp/m/models"
-	"net/http"
-
-	"github.com/spf13/viper"
 )
 
 type pokemonRepo interface {
 	GetPokemonsFromCSV() ([]models.Pokemon, error)
-	WritePokemonCsvFile(pokemons []models.Pokemon) (bool, error)
+	WritePokemonCsvFile(pokemons []models.Pokemon) error
+}
+
+type pokemonClient interface {
+	GetPokemons() ([]models.Pokemon, error)
 }
 
 type PokemonService struct {
-	repo pokemonRepo
+	repo   pokemonRepo
+	client pokemonClient
 }
 
-func NewPokemonService(repo pokemonRepo) PokemonService {
-	return PokemonService{repo}
+func NewPokemonService(repo pokemonRepo, client pokemonClient) PokemonService {
+	return PokemonService{repo, client}
 }
 
 func (pks PokemonService) FindAllPokemons() ([]models.Pokemon, error) {
-	pokemons, error := pks.repo.GetPokemonsFromCSV()
-	if error != nil {
-		return nil, error
+	pokemons, err := pks.repo.GetPokemonsFromCSV()
+	if err != nil {
+		return nil, err
 	}
 	return pokemons, nil
 }
 
 func (pks PokemonService) FindPokemonById(id int) (*models.Pokemon, error) {
-	pokemons, error := pks.FindAllPokemons()
-	if error != nil {
-		return nil, error
+	pokemons, err := pks.FindAllPokemons()
+	if err != nil {
+		return nil, err
 	}
 	for _, pokemon := range pokemons {
 		if pokemon.Id == id {
@@ -43,16 +44,11 @@ func (pks PokemonService) FindPokemonById(id int) (*models.Pokemon, error) {
 	return nil, nil
 }
 
-func (pks PokemonService) LoadPokemons() (bool, error) {
-	response, error := http.Get(viper.GetString("api.pokemon.url"))
-	if error != nil {
-		fmt.Println("Error getting data from api: ", error)
-		return false, error
-	}
-	parsedPokemons, error := requests.ParsePokemonsFromApi(response)
-	if error != nil {
-		fmt.Println("Error parsing pokemon data: ", error)
-		return false, error
+func (pks PokemonService) LoadPokemons() error {
+	parsedPokemons, err := pks.client.GetPokemons()
+	if err != nil {
+		fmt.Println("Error getting data from api: ", err)
+		return err
 	}
 
 	return pks.repo.WritePokemonCsvFile(parsedPokemons)
