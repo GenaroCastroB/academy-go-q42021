@@ -3,13 +3,17 @@ package common
 import (
 	"encoding/csv"
 	"fmt"
-	"golangBootcamp/m/models"
 	"io"
 	"os"
-	"strconv"
 )
 
-func ReadCsvFile(filePath string) ([][]string, error) {
+type CsvReader struct{}
+
+func NewCsvReader() CsvReader {
+	return CsvReader{}
+}
+
+func (csvR CsvReader) ReadCsvFile(filePath string) ([][]string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Println("Unable to read input file "+filePath, err)
@@ -35,18 +39,23 @@ func readFile(reader io.Reader) ([][]string, error) {
 	return records, err
 }
 
-func GetPokemonsFromCSV() ([]models.Pokemon, error) {
-	csvPokemons, error := ReadCsvFile("./pokemon.csv")
-	if error != nil {
-		return nil, error
+func (csvR CsvReader) WriteCsvFile(filePath string, data [][]string) error {
+	file, err := os.Create(filePath)
+	if err != nil {
+		fmt.Println("Cannot create file", err)
+		return err
 	}
-	pokemons := []models.Pokemon{}
-	for _, csvPokemon := range csvPokemons {
-		intId, error := strconv.Atoi(csvPokemon[0])
-		if error != nil {
-			return nil, error
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	for _, row := range data {
+		err := writer.Write(row)
+		if err != nil {
+			fmt.Println("Cannot write to file", err)
+			return err
 		}
-		pokemons = append(pokemons, models.Pokemon{Id: intId, Name: csvPokemon[1]})
 	}
-	return pokemons, nil
+	return nil
 }

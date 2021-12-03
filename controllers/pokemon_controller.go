@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"fmt"
-	"golangBootcamp/m/services"
+	"golangBootcamp/m/models"
 	"net/http"
 
 	"strconv"
@@ -10,26 +10,40 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func FindPokemons(c *gin.Context) {
-	pokemons, error := services.FindAllPokemons()
-	if error != nil {
-		fmt.Println("Error ", error)
+type pokemonService interface {
+	FindAllPokemons() ([]models.Pokemon, error)
+	FindPokemonById(id int) (*models.Pokemon, error)
+	LoadPokemons() error
+}
+
+type PokemonServiceHandler struct {
+	pokemonService pokemonService
+}
+
+func NewPokemonServiceHandler(pokemonService pokemonService) PokemonServiceHandler {
+	return PokemonServiceHandler{pokemonService}
+}
+
+func (pks PokemonServiceHandler) FindPokemons(c *gin.Context) {
+	pokemons, err := pks.pokemonService.FindAllPokemons()
+	if err != nil {
+		fmt.Println("Error ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Something went wrong!"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": pokemons})
 }
 
-func FindPokemonById(c *gin.Context) {
-	id, error := strconv.Atoi(c.Param("id"))
-	if error != nil {
-		fmt.Println("Error ", error)
+func (pks PokemonServiceHandler) FindPokemonById(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		fmt.Println("Error ", err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid id param"})
 		return
 	}
-	pokemon, error := services.FindPokemonById(id)
-	if error != nil {
-		fmt.Println("Error ", error)
+	pokemon, err := pks.pokemonService.FindPokemonById(id)
+	if err != nil {
+		fmt.Println("Error ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Something went wrong!"})
 		return
 	}
@@ -38,4 +52,14 @@ func FindPokemonById(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusNotFound, gin.H{"message": "pokemon not found"})
+}
+
+func (pks PokemonServiceHandler) LoadPokemons(c *gin.Context) {
+	err := pks.pokemonService.LoadPokemons()
+	if err != nil {
+		fmt.Println("Error ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Something went wrong!"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{})
 }
