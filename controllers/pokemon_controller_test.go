@@ -29,6 +29,10 @@ func (mpsh MockedPokemonServiceHandler) LoadPokemons() error {
 	return mpsh.expectedError
 }
 
+func (mpsh MockedPokemonServiceHandler) FindPokemonByType(idType string, items int, itemsPerWorker int) ([]models.Pokemon, error) {
+	return nil, nil
+}
+
 func TestFindPokemons(t *testing.T) {
 	subtests := []struct {
 		name           string

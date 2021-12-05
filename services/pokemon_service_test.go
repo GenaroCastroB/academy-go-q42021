@@ -21,6 +21,10 @@ func (mpr MockedPokemonRepo) WritePokemonCsvFile(pokemons []models.Pokemon) erro
 	return nil
 }
 
+func (mpr MockedPokemonRepo) GetPokemonsFromCSVConcurrently(idType string, items int, itemsPerWorker int) ([]models.Pokemon, error) {
+	return nil, nil
+}
+
 type MockedPokemonClient struct {
 	expectedPokemons []models.Pokemon
 	expectedError    error
