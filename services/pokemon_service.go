@@ -8,6 +8,7 @@ import (
 type pokemonRepo interface {
 	GetPokemonsFromCSV() ([]models.Pokemon, error)
 	WritePokemonCsvFile(pokemons []models.Pokemon) error
+	GetPokemonsFromCSVConcurrently(idType string, items int, itemsPerWorker int) ([]models.Pokemon, error)
 }
 
 type pokemonClient interface {
@@ -42,6 +43,14 @@ func (pks PokemonService) FindPokemonById(id int) (*models.Pokemon, error) {
 		}
 	}
 	return nil, nil
+}
+
+func (pks PokemonService) FindPokemonByType(idType string, items int, itemsPerWorker int) ([]models.Pokemon, error) {
+	pokemons, err := pks.repo.GetPokemonsFromCSVConcurrently(idType, items, itemsPerWorker)
+	if err != nil {
+		return nil, err
+	}
+	return pokemons, nil
 }
 
 func (pks PokemonService) LoadPokemons() error {

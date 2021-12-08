@@ -39,6 +39,7 @@ func (a *App) injectDependencies() {
 
 func (a *App) setRoutes() {
 	a.Router.GET("/pokemons", a.pokemonHandler.FindPokemons)
+	a.Router.GET("v2/pokemons", a.pokemonHandler.FindPokemonsConcurrently)
 	a.Router.GET("/pokemons/:id", a.pokemonHandler.FindPokemonById)
 	a.Router.PUT("/load/pokemons", a.pokemonHandler.LoadPokemons)
 }
