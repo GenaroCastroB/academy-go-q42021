@@ -5,6 +5,7 @@ import (
 	"golangBootcamp/m/models"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -30,7 +31,7 @@ func (mpsh MockedPokemonServiceHandler) LoadPokemons() error {
 }
 
 func (mpsh MockedPokemonServiceHandler) FindPokemonByType(idType string, items int, itemsPerWorker int) ([]models.Pokemon, error) {
-	return nil, nil
+	return mpsh.expectedPokemons, mpsh.expectedError
 }
 
 func TestFindPokemons(t *testing.T) {
@@ -143,6 +144,62 @@ func TestLoadPokemons(t *testing.T) {
 			c, _ := gin.CreateTestContext(w)
 			pks := NewPokemonServiceHandler(subtest.mpsh)
 			pks.LoadPokemons(c)
+			assert.Equal(t, w.Code, subtest.expectedStatus)
+		})
+	}
+}
+
+func TestFindPokemonsConcurrently(t *testing.T) {
+	subtests := []struct {
+		name           string
+		mpsh           pokemonService
+		query          string
+		expectedStatus int
+	}{
+		{
+			name: "Happy path",
+			mpsh: &MockedPokemonServiceHandler{
+				expectedPokemon: &models.Pokemon{Id: 1, Name: "name"},
+			},
+			query:          "type=odd&items=1&items_per_workers=1",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Invalid type query params",
+			mpsh:           &MockedPokemonServiceHandler{},
+			query:          "type=invalidType",
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "Invalid items query params",
+			mpsh:           &MockedPokemonServiceHandler{},
+			query:          "type=even&items=a",
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "Invalid items_per_workers query params",
+			mpsh:           &MockedPokemonServiceHandler{},
+			query:          "type=even&items=1&items_per_workers=a",
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Error getting pokemons",
+			mpsh: &MockedPokemonServiceHandler{
+				expectedError: errors.New("Error"),
+			},
+			query:          "type=odd&items=1&items_per_workers=1",
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, subtest := range subtests {
+		t.Run(subtest.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			url := &url.URL{RawQuery: subtest.query}
+			c.Request = &http.Request{URL: url}
+			pks := NewPokemonServiceHandler(subtest.mpsh)
+			pks.FindPokemonsConcurrently(c)
 			assert.Equal(t, w.Code, subtest.expectedStatus)
 		})
 	}

@@ -43,20 +43,20 @@ func (pks PokemonServiceHandler) FindPokemons(c *gin.Context) {
 
 func (pks PokemonServiceHandler) FindPokemonsConcurrently(c *gin.Context) {
 	idType := c.Query("type")
-	items, itemsErr := strconv.Atoi(c.Query("items"))
-	itemsPerWorkers, itemsPWErr := strconv.Atoi(c.Query("items_per_workers"))
-	if itemsErr != nil {
-		fmt.Println("Error ", itemsErr)
+	if _, ok := AllowedIdTypes[idType]; !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid type param"})
+		return
+	}
+	items, err := strconv.Atoi(c.Query("items"))
+	if err != nil {
+		fmt.Println("Error ", err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid items param"})
 		return
 	}
-	if itemsPWErr != nil {
-		fmt.Println("Error ", itemsPWErr)
+	itemsPerWorkers, err := strconv.Atoi(c.Query("items_per_workers"))
+	if err != nil {
+		fmt.Println("Error ", err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid items per worker param"})
-		return
-	}
-	if _, ok := AllowedIdTypes[idType]; !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid type param"})
 		return
 	}
 	start := time.Now()

@@ -22,7 +22,7 @@ func (mpr MockedPokemonRepo) WritePokemonCsvFile(pokemons []models.Pokemon) erro
 }
 
 func (mpr MockedPokemonRepo) GetPokemonsFromCSVConcurrently(idType string, items int, itemsPerWorker int) ([]models.Pokemon, error) {
-	return nil, nil
+	return mpr.expectedPokemons, mpr.expectedError
 }
 
 type MockedPokemonClient struct {
@@ -128,6 +128,50 @@ func TestLoadPokemons(t *testing.T) {
 		t.Run(subtest.name, func(t *testing.T) {
 			service := NewPokemonService(subtest.mpr, subtest.mpc)
 			err := service.LoadPokemons()
+			assert.Equal(t, err, subtest.expectedErr)
+		})
+	}
+}
+
+func TestFindPokemonByType(t *testing.T) {
+	subtests := []struct {
+		name         string
+		mpr          pokemonRepo
+		mpc          pokemonClient
+		expectedData []models.Pokemon
+		expectedErr  error
+	}{
+		{
+			name: "Happy path",
+			mpr: &MockedPokemonRepo{
+				expectedPokemons: []models.Pokemon{
+					{Id: 1, Name: "name"},
+				},
+				expectedError: nil,
+			},
+			mpc: nil,
+			expectedData: []models.Pokemon{
+				{Id: 1, Name: "name"},
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "Find pokemons error",
+			mpr: &MockedPokemonRepo{
+				expectedPokemons: nil,
+				expectedError:    errors.New("Error"),
+			},
+			mpc:          nil,
+			expectedData: nil,
+			expectedErr:  errors.New("Error"),
+		},
+	}
+
+	for _, subtest := range subtests {
+		t.Run(subtest.name, func(t *testing.T) {
+			service := NewPokemonService(subtest.mpr, subtest.mpc)
+			pokemon, err := service.FindPokemonByType("", 1, 1)
+			assert.Equal(t, pokemon, subtest.expectedData, "they should be equal")
 			assert.Equal(t, err, subtest.expectedErr)
 		})
 	}

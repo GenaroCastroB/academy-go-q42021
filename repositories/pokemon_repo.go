@@ -61,7 +61,7 @@ func (pr PokemonRepo) GetPokemonsFromCSVConcurrently(idType string, items int, i
 	var wg sync.WaitGroup
 	defer cancel()
 	row := make(chan []string)
-	pokemon := make(chan models.Pokemon)
+	pokemon := make(chan models.Pokemon, numberOfWorkers)
 	readedItems := 0
 
 	csvfile, err := os.Open(pr.dataFilePath)
